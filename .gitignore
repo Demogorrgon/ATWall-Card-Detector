@@ -1,0 +1,9 @@
+.idea
+
+images
+models/my_frcnn_resnet50_v1/train
+models/my_frcnn_resnet50_v1/checkpoint
+models/my_frcnn_resnet50_v1/ckpt*
+pre_trained_models
+annotations
+exported-models
