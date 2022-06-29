@@ -110,6 +110,9 @@ def create_tf_example(group, path):
     classes = []
 
     for index, row in group.object.iterrows():
+        # quickfix: do not add "Number" class for now
+        if row["class"] == "Number":
+            continue
         xmins.append(row["xmin"] / width)
         xmaxs.append(row["xmax"] / width)
         ymins.append(row["ymin"] / height)
