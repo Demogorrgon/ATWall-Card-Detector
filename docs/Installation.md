@@ -6,8 +6,13 @@
    
 3. Follow the official tf object detection API guide to install all the needed components: [https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/install.html](https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/install.html)
    (Make sure to download pre-trained models (frcnn_resnet50_v1) for fine-tuning and place them into the `models` directory).
-   
-4. Set up a Python virtual environment for running the API service:
+
+4. Set up conda env for training/testing the model: 
+```
+conda create --name <env> --file <this file>
+  ```
+
+5. Set up a Python virtual environment for running the API service:
 - Navigate to the `api` directory:
   ```
   cd api
