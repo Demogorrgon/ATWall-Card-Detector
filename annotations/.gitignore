@@ -1,0 +1,6 @@
+1_342*
+
+icdar_2013/train
+icdar_2013/test
+
+icdar_2013/*.tfrecord

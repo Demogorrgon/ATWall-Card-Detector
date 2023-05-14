@@ -12,7 +12,7 @@ models/my_frcnn_resnet50_v1_text_detector/checkpoint
 models/my_frcnn_resnet50_v1_text_detector/ckpt*
 
 pre_trained_models
-annotations
+
 exported-models
 
 .ipynb_checkpoints

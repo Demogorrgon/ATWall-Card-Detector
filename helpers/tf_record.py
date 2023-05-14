@@ -74,16 +74,17 @@ def create_tf_example(group, path, label_map_file_name):
 def create_tf_record(
     images_dir: str,
     tf_record_filename: str,
+    annotations_path: str,
     label_map_file_name: str,
     processor: Callable[[str, str], tf.train.Example],
 ):
     curr_dir = os.getcwd()
-    annotations_path = os.path.join(curr_dir, os.pardir, "annotations")
+    annotations_full_path = os.path.join(curr_dir, os.pardir, annotations_path)
     tfrecord_path = os.path.join(curr_dir, os.pardir, f"annotations/{tf_record_filename}.tfrecord")
 
     writer = tf.io.TFRecordWriter(tfrecord_path)
     images_raw_path = os.path.join(curr_dir, os.pardir, images_dir)
-    examples = processor(annotations_path, images_dir)
+    examples = processor(annotations_full_path, images_dir)
 
     grouped = split(examples, "filename")
 
