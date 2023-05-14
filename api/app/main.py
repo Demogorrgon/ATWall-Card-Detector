@@ -1,16 +1,19 @@
 import os
 import numpy as np
+from io import BytesIO
+
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
-from io import BytesIO
 import tensorflow as tf
 
+
+# TODO: place into env vars
 CARD_DETECTOR_MODEL_PATH = "models/my_model/saved_model"
 TEXT_DETECTOR_MODEL_PATH = "models/my_text_detector/saved_model"
 
 
-def get_bounding_boxes(detections, width, height):
+def get_bounding_boxes(detections):
     # This is the way I'm getting my coordinates
     boxes = detections['detection_boxes'][0]
     # get all boxes from an array
@@ -31,12 +34,37 @@ def get_bounding_boxes(detections, width, height):
     return coordinates
 
 
+async def predict_and_get_bb(file, model_path):
+    current_file_path = os.path.abspath(__file__)
+
+    current_directory = os.path.dirname(current_file_path)
+
+    model_directory = os.path.join(current_directory, model_path)
+
+    model_fn = tf.saved_model.load(model_directory)
+
+    contents = await file.read()
+
+    image_np = Image.open(BytesIO(contents))
+    image_np = np.array(image_np)
+    image_np = image_np[:, :, :3]
+
+    input_tensor = tf.convert_to_tensor(image_np)
+    input_tensor = input_tensor[tf.newaxis, ...]
+    detections = model_fn(input_tensor)
+
+    bounding_boxes = get_bounding_boxes(detections)
+
+    data = tf.nest.map_structure(lambda x: x.numpy().tolist() if isinstance(x, tf.Tensor) else x, bounding_boxes)
+
+    return data
+
+
 def create_app():
     app = FastAPI()
 
     origins = [
-        "http://localhost:3000",  # Add the origin of your React app
-        # Add more origins if needed
+        "http://localhost:3000",
     ]
 
     app.add_middleware(
@@ -49,57 +77,13 @@ def create_app():
 
     @app.post("/recognize_card")
     async def recognize_card(file: UploadFile = File(...)):
-        current_file_path = os.path.abspath(__file__)
-
-        current_directory = os.path.dirname(current_file_path)
-
-        card_detector_directory = os.path.join(current_directory, CARD_DETECTOR_MODEL_PATH)
-
-        detect_fn = tf.saved_model.load(card_detector_directory)
-
-        contents = await file.read()
-
-        image_np = Image.open(BytesIO(contents))
-        image_np = np.array(image_np)
-        image_np = image_np[:, :, :3]
-
-        print("DEBUG", image_np.shape)
-
-        input_tensor = tf.convert_to_tensor(image_np)
-        input_tensor = input_tensor[tf.newaxis, ...]
-        detections = detect_fn(input_tensor)
-
-        bounding_boxes = get_bounding_boxes(detections)
-
-        data = tf.nest.map_structure(lambda x: x.numpy().tolist() if isinstance(x, tf.Tensor) else x, bounding_boxes)
+        data = await predict_and_get_bb(file=file, model_path=CARD_DETECTOR_MODEL_PATH)
 
         return {"bounding_boxes": data}
 
     @app.post("/recognize_text")
     async def recognize_text(file: UploadFile = File(...)):
-        current_file_path = os.path.abspath(__file__)
-
-        current_directory = os.path.dirname(current_file_path)
-
-        text_detector_directory = os.path.join(current_directory, TEXT_DETECTOR_MODEL_PATH)
-
-        detect_fn = tf.saved_model.load(text_detector_directory)
-
-        contents = await file.read()
-
-        image_np = Image.open(BytesIO(contents))
-        image_np = np.array(image_np)
-        image_np = image_np[:, :, :3]
-
-        (height, width, _) = image_np.shape
-
-        input_tensor = tf.convert_to_tensor(image_np)
-        input_tensor = input_tensor[tf.newaxis, ...]
-        detections = detect_fn(input_tensor)
-
-        bounding_boxes = get_bounding_boxes(detections, width, height)
-
-        data = tf.nest.map_structure(lambda x: x.numpy().tolist() if isinstance(x, tf.Tensor) else x, bounding_boxes)
+        data = await predict_and_get_bb(file=file, model_path=TEXT_DETECTOR_MODEL_PATH)
 
         return {"bounding_boxes": data}
 
