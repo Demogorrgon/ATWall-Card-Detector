@@ -1,22 +1,22 @@
 # Installation
 
-1. Install python 3.8 and 3.10 on the machine (or use pyenv to install required version)
-<br />
-<br />
-2. Install Anaconda software on the machine
-<br />
-<br />
-3. Walk through the official tf object detection api guide and install all needed components: https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/install.html# 
-(make sure to download pre-trained models (frcnn_resnet50_v1) for fine-tuning, and place them into ```models``` directory)
-<br />
-<br />
-4. Set up conda env for training/testing the model: 
-```conda create --name <env> --file <this file>```
-<br />
-<br />
-5. Set up python virtual env for running the api service: 
-   * ```cd api```
-   * ```python -m venv venv```
-   * ```pip install -r .\requirements.txt```
-<br />
-<br />
+1. Install Python 3.8 and 3.10 on the machine (or use pyenv to install the required version).
+   
+2. Install Anaconda software on the machine.
+   
+3. Follow the official tf object detection API guide to install all the needed components: [https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/install.html](https://tensorflow-object-detection-api-tutorial.readthedocs.io/en/latest/install.html)
+   (Make sure to download pre-trained models (frcnn_resnet50_v1) for fine-tuning and place them into the `models` directory).
+   
+4. Set up a Python virtual environment for running the API service:
+- Navigate to the `api` directory:
+  ```
+  cd api
+  ```
+- Create a virtual environment:
+  ```
+  python -m venv venv
+  ```
+- Install the required packages:
+  ```
+  pip install -r requirements.txt
+  ```
