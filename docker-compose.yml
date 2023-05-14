@@ -1,0 +1,16 @@
+services:
+  api:
+    build:
+      context: ./api
+    ports:
+      - "5001:8000"
+
+  client:
+    build:
+      context: ./client
+    ports:
+      - 3000:3000
+    environment:
+      - REACT_APP_API_ENDPOINT=http://host.docker.internal:5001
+    depends_on:
+      - api
