@@ -1,3 +1,5 @@
+from typing import TypedDict, List
+
 import os
 import numpy as np
 from io import BytesIO
@@ -13,7 +15,19 @@ CARD_DETECTOR_MODEL_PATH = "models/my_model/saved_model"
 TEXT_DETECTOR_MODEL_PATH = "models/my_text_detector/saved_model"
 
 
-def get_bounding_boxes(detections):
+class Coordinates(TypedDict):
+    box: List[float]
+    score: List[float]
+
+
+class RecognitionResult(TypedDict):
+    bounding_boxes: List[Coordinates]
+
+
+def get_bounding_boxes(detections) -> List[Coordinates]:
+    """Takes raw prediction result of an object detection model
+    and returns most probable collection of bounding boxes"""
+
     # This is the way I'm getting my coordinates
     boxes = detections['detection_boxes'][0]
     # get all boxes from an array
@@ -23,18 +37,22 @@ def get_bounding_boxes(detections):
     # this is set as a default but feel free to adjust it to your needs
     min_score_thresh = .5
     # # iterate over all objects found
-    coordinates = []
+    coordinates: List[Coordinates] = []
     for i in range(min(max_boxes_to_draw, boxes.shape[0])):
         if scores[i] > min_score_thresh:
-            coordinates.append({
-                "box": boxes[i],
-                "score": scores[i]
-            })
+            coordinates.append(
+                Coordinates(
+                    box=boxes[i],
+                    score=scores[i],
+                )
+            )
 
     return coordinates
 
 
-async def predict_and_get_bb(file, model_path):
+async def predict_and_get_bb(file, model_path) -> List[Coordinates]:
+    """Loads the model by its path, then runs prediction on an image file. Returns bounding boxes data"""
+
     current_file_path = os.path.abspath(__file__)
 
     current_directory = os.path.dirname(current_file_path)
@@ -55,9 +73,7 @@ async def predict_and_get_bb(file, model_path):
 
     bounding_boxes = get_bounding_boxes(detections)
 
-    data = tf.nest.map_structure(lambda x: x.numpy().tolist() if isinstance(x, tf.Tensor) else x, bounding_boxes)
-
-    return data
+    return tf.nest.map_structure(lambda x: x.numpy().tolist() if isinstance(x, tf.Tensor) else x, bounding_boxes)
 
 
 def create_app():
@@ -76,13 +92,13 @@ def create_app():
     )
 
     @app.post("/recognize_card")
-    async def recognize_card(file: UploadFile = File(...)):
+    async def recognize_card(file: UploadFile = File(...)) -> RecognitionResult:
         data = await predict_and_get_bb(file=file, model_path=CARD_DETECTOR_MODEL_PATH)
 
         return {"bounding_boxes": data}
 
     @app.post("/recognize_text")
-    async def recognize_text(file: UploadFile = File(...)):
+    async def recognize_text(file: UploadFile = File(...)) -> RecognitionResult:
         data = await predict_and_get_bb(file=file, model_path=TEXT_DETECTOR_MODEL_PATH)
 
         return {"bounding_boxes": data}

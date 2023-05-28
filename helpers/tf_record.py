@@ -1,14 +1,21 @@
 import os
 import io
-from typing import Callable
-from collections import namedtuple
+from typing import Callable, NamedTuple, List
 
+import pandas as pd
 import tensorflow as tf
 from PIL import Image
 from object_detection.utils import dataset_util, label_map_util
 
 
-def class_text_to_int(row_label: str, label_map_file_name: str):
+class SplitData(NamedTuple):
+    filename: str
+    object: pd.DataFrame | pd.Series
+
+
+def class_text_to_int(row_label: str, label_map_file_name: str) -> int:
+    """Takes in a string label of a class and returns its integer representation"""
+
     curr_dir = os.getcwd()
     labels_path = os.path.join(curr_dir, os.pardir, f"annotations/{label_map_file_name}.pbtxt")
     label_map = label_map_util.load_labelmap(labels_path)
@@ -17,14 +24,18 @@ def class_text_to_int(row_label: str, label_map_file_name: str):
     return label_map_dict[row_label]
 
 
-def split(df, group):
-    data = namedtuple("data", ["filename", "object"])
-    gb = df.groupby(group)
+def split(df) -> List[SplitData]:
+    """Groups dataframe with images data, returned by processor, by a filename
+    and returns images info as the filename groups"""
 
-    return [data(filename, gb.get_group(x)) for filename, x in zip(gb.groups.keys(), gb.groups)]
+    gb = df.groupby("filename")
+
+    return [SplitData(filename, gb.get_group(x)) for filename, x in zip(gb.groups.keys(), gb.groups)]
 
 
-def create_tf_example(group, path, label_map_file_name):
+def create_tf_example(group, path, label_map_file_name) -> tf.train.Example:
+    """Creates and returns TF Example with single image data, which will be used for training"""
+
     with tf.io.gfile.GFile(os.path.join(path, "{}".format(group.filename)), "rb") as fid:
         encoded_jpg = fid.read()
 
@@ -76,8 +87,11 @@ def create_tf_record(
     tf_record_filename: str,
     annotations_path: str,
     label_map_file_name: str,
-    processor: Callable[[str, str], tf.train.Example],
+    processor: Callable[[str, str], pd.DataFrame],
 ):
+    """Entrypoint function that runs a processor on raw images data (labels and binary)
+    and saves TF record with all the data on the disk"""
+
     curr_dir = os.getcwd()
     annotations_full_path = os.path.join(curr_dir, os.pardir, annotations_path)
     tfrecord_path = os.path.join(curr_dir, os.pardir, f"annotations/{tf_record_filename}.tfrecord")
@@ -86,7 +100,7 @@ def create_tf_record(
     images_raw_path = os.path.join(curr_dir, os.pardir, images_dir)
     examples = processor(annotations_full_path, images_dir)
 
-    grouped = split(examples, "filename")
+    grouped = split(examples)
 
     for group in grouped:
         tf_example = create_tf_example(group, images_raw_path, label_map_file_name)

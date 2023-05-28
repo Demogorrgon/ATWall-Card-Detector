@@ -5,7 +5,10 @@ import xml.etree.ElementTree as ET
 import pandas as pd
 
 
-def xml_to_csv(annotations_path, images_dir):
+def xml_to_df(annotations_path, images_dir) -> pd.DataFrame:
+    """Takes images the source and the path to xml file, that stores classes annotations of those images,
+     and returns a Pandas DataFrame that holds images info (dimensions, coordinates, etc)"""
+
     curr_dir = os.getcwd()
 
     xml_list = []

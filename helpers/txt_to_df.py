@@ -5,7 +5,10 @@ import cv2
 import pandas as pd
 
 
-def txt_to_csv(annotations_path: str, images_dir: str):
+def txt_to_df(annotations_path: str, images_dir: str) -> pd.DataFrame:
+    """Takes the images source and the path to txt file, that stores classes annotations of those images,
+     and returns a Pandas DataFrame that holds images info (dimensions, coordinates, etc)"""
+
     dirname = os.getcwd()
     result = []
 

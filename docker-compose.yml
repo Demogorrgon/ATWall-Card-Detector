@@ -4,6 +4,8 @@ services:
       context: ./api
     ports:
       - "5001:8000"
+    volumes:
+      - ./api:/app
 
   client:
     build:
